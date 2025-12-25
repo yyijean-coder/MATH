@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>長輩數學練習產生器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* A4 列印設定 */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none; }
+            .print-page { 
+                page-break-after: always; 
+                width: 210mm;
+                min-height: 297mm;
+                padding: 20mm;
+                margin: 0 auto;
+                box-sizing: border-box;
+            }
+            .print-page:last-child { page-break-after: auto; }
+        }
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        body {
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            background-color: #f3f4f6;
+        }
+        .math-problem {
+            font-size: 2.5rem; /* 超大字體 */
+            letter-spacing: 0.2rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- 控制面板 -->
+    <div class="no-print max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h1 class="text-3xl font-bold text-blue-600 mb-6 flex items-center">
+            <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            長輩數學練習產生器
+        </h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 難度選擇 -->
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">難度設定</label>
+                <select id="difficulty" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400">
+                    <option value="easy">簡單 (個位數加減)</option>
+                    <option value="medium" selected>普通 (兩位數不進位加減)</option>
+                    <option value="hard">挑戰 (兩位數進位/退位)</option>
+                    <option value="expert">高手 (三位數或混合運算)</option>
+                </select>
+            </div>
+
+            <!-- 份數設定 -->
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">生成份數 (每份不同題目)</label>
+                <input type="number" id="pageCount" value="1" min="1" max="50" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400">
+            </div>
+
+            <!-- 運算符號 -->
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">運算類型</label>
+                <div class="flex space-x-4 mt-2">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="opAdd" checked class="form-checkbox h-5 w-5 text-blue-600">
+                        <span class="ml-2 text-lg">加法</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="opSub" checked class="form-checkbox h-5 w-5 text-blue-600">
+                        <span class="ml-2 text-lg">減法</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 答案頁開關 -->
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">其他選項</label>
+                <label class="inline-flex items-center mt-2 cursor-pointer">
+                    <input type="checkbox" id="showAnswers" checked class="form-checkbox h-5 w-5 text-green-600">
+                    <span class="ml-2 text-lg font-semibold text-green-700">產生答案參考頁</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="mt-8 flex space-x-4">
+            <button onclick="generate()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                預覽題目
+            </button>
+            <button onclick="window.print()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-lg">
+                列印 / 下載 PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- 生成內容顯示區 -->
+    <div id="outputContainer" class="max-w-[210mm] mx-auto">
+        <!-- 初始提示 -->
+        <div class="no-print text-center text-gray-500 py-20 bg-white rounded-xl">
+            請設定參數後點擊「預覽題目」
+        </div>
+    </div>
+
+    <script>
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generate() {
+            const difficulty = document.getElementById('difficulty').value;
+            const pageCount = parseInt(document.getElementById('pageCount').value) || 1;
+            const showAnswers = document.getElementById('showAnswers').checked;
+            const opAdd = document.getElementById('opAdd').checked;
+            const opSub = document.getElementById('opSub').checked;
+            
+            if (!opAdd && !opSub) {
+                alert("請至少選擇一種運算類型！");
+                return;
+            }
+
+            const container = document.getElementById('outputContainer');
+            container.innerHTML = '';
+            let allAnswers = [];
+
+            for (let p = 0; p < pageCount; p++) {
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'print-page bg-white shadow-xl mb-8';
+                
+                // 標題
+                const title = document.createElement('h2');
+                title.className = 'text-3xl font-bold border-b-4 border-gray-800 pb-4 mb-8 text-center';
+                title.innerText = `天天動動腦 - 數學練習卷 (第 ${p + 1} 回)`;
+                pageDiv.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 gap-y-12 mt-12';
+                
+                let pageAnswers = [];
+
+                // 每頁產生 10 題
+                for (let i = 1; i <= 10; i++) {
+                    let num1, num2, operator, answer;
+                    
+                    // 根據難度生成數字
+                    if (difficulty === 'easy') {
+                        num1 = getRandomInt(1, 9);
+                        num2 = getRandomInt(1, 9);
+                    } else if (difficulty === 'medium') {
+                        num1 = getRandomInt(10, 50);
+                        num2 = getRandomInt(1, 9); // 不進位加減為主
+                    } else if (difficulty === 'hard') {
+                        num1 = getRandomInt(20, 99);
+                        num2 = getRandomInt(10, 99);
+                    } else {
+                        num1 = getRandomInt(100, 500);
+                        num2 = getRandomInt(50, 400);
+                    }
+
+                    // 決定運算符
+                    let ops = [];
+                    if (opAdd) ops.push('+');
+                    if (opSub) ops.push('-');
+                    operator = ops[getRandomInt(0, ops.length - 1)];
+
+                    // 修正減法不出現負數
+                    if (operator === '-' && num1 < num2) {
+                        [num1, num2] = [num2, num1];
+                    }
+                    
+                    answer = operator === '+' ? (num1 + num2) : (num1 - num2);
+                    pageAnswers.push({ id: i, ans: answer });
+
+                    const probRow = document.createElement('div');
+                    probRow.className = 'flex items-center justify-between border-b border-gray-100 pb-4 px-4';
+                    probRow.innerHTML = `
+                        <div class="text-2xl text-gray-400 font-mono">${i}.</div>
+                        <div class="math-problem font-bold">${num1} ${operator === '+' ? '+' : '−'} ${num2} =</div>
+                        <div class="w-48 h-16 border-2 border-dashed border-gray-400 rounded-lg"></div>
+                    `;
+                    grid.appendChild(probRow);
+                }
+
+                pageDiv.appendChild(grid);
+                
+                // 底部祝福語
+                const footer = document.createElement('div');
+                footer.className = 'mt-16 text-center text-gray-500 italic text-xl';
+                footer.innerText = "多動腦，身體好！加油！";
+                pageDiv.appendChild(footer);
+
+                container.appendChild(pageDiv);
+                allAnswers.push({ page: p + 1, data: pageAnswers });
+            }
+
+            // 產生答案頁
+            if (showAnswers) {
+                const ansPage = document.createElement('div');
+                ansPage.className = 'print-page bg-white shadow-xl mb-8';
+                ansPage.innerHTML = `<h2 class="text-3xl font-bold border-b-4 border-green-600 pb-4 mb-8 text-center text-green-700">答案參考頁</h2>`;
+                
+                const ansGrid = document.createElement('div');
+                ansGrid.className = 'grid grid-cols-2 gap-8';
+
+                allAnswers.forEach(pageAns => {
+                    const box = document.createElement('div');
+                    box.className = 'border p-4 rounded-lg bg-gray-50';
+                    box.innerHTML = `<h3 class="font-bold text-xl mb-2 text-blue-600">第 ${pageAns.page} 回</h3>`;
+                    let list = document.createElement('div');
+                    list.className = 'grid grid-cols-2 gap-2 text-lg';
+                    pageAns.data.forEach(item => {
+                        list.innerHTML += `<div>(${item.id}) <span class="font-bold text-red-600">${item.ans}</span></div>`;
+                    });
+                    box.appendChild(list);
+                    ansGrid.appendChild(box);
+                });
+
+                ansPage.appendChild(ansGrid);
+                container.appendChild(ansPage);
+            }
+        }
+    </script>
+</body>
+</html>
