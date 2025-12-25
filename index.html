@@ -17,6 +17,7 @@
                 padding: 20mm;
                 margin: 0 auto;
                 box-sizing: border-box;
+                position: relative;
             }
             .print-page:last-child { page-break-after: auto; }
         }
@@ -32,34 +33,34 @@
             font-size: 2.5rem; /* 超大字體 */
             letter-spacing: 0.2rem;
         }
-        /* Logo 樣式 */
-        .logo-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-        }
-        .logo-img {
-            max-width: 400px; /* 控制 Logo 寬度 */
+        /* 右上角 Logo 樣式 */
+        .logo-top-right {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 120px; /* 縮小尺寸 */
             height: auto;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        /* 控制面板中的 Logo 排版 */
+        .header-container {
+            position: relative;
+            padding-top: 1rem;
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <!-- 控制面板 -->
-    <div class="no-print max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 mb-8">
-        <!-- 網頁 Logo -->
-        <div class="logo-container">
-            <img src="https://media.ct.org.tw/upload/news_article/2019/03/21231941_1601717976537976_3045329721267241044_n.jpg?wm=LB" 
-                 alt="Logo" 
-                 class="logo-img"
-                 onerror="this.src='https://via.placeholder.com/400x150?text=Math+Practice+Logo'">
-        </div>
+    <div class="no-print max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 mb-8 header-container">
+        <!-- 右上角 Logo -->
+        <img src="https://media.ct.org.tw/upload/news_article/2019/03/21231941_1601717976537976_3045329721267241044_n.jpg?wm=LB" 
+             alt="Logo" 
+             class="logo-top-right"
+             onerror="this.style.display='none'">
 
-        <h1 class="text-3xl font-bold text-blue-600 mb-6 flex items-center justify-center">
+        <h1 class="text-3xl font-bold text-blue-600 mb-8 flex items-center">
             <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
             長輩數學練習產生器
         </h1>
@@ -78,7 +79,7 @@
 
             <!-- 份數設定 -->
             <div>
-                <label class="block text-gray-700 font-bold mb-2">生成份數 (每份不同題目)</label>
+                <label class="block text-gray-700 font-bold mb-2">生成份數</label>
                 <input type="number" id="pageCount" value="1" min="1" max="50" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400">
             </div>
 
@@ -102,7 +103,7 @@
                 <label class="block text-gray-700 font-bold mb-2">其他選項</label>
                 <label class="inline-flex items-center mt-2 cursor-pointer">
                     <input type="checkbox" id="showAnswers" checked class="form-checkbox h-5 w-5 text-green-600">
-                    <span class="ml-2 text-lg font-semibold text-green-700">產生答案參考頁</span>
+                    <span class="ml-2 text-lg font-semibold text-green-700">產生答案頁</span>
                 </label>
             </div>
         </div>
@@ -119,9 +120,8 @@
 
     <!-- 生成內容顯示區 -->
     <div id="outputContainer" class="max-w-[210mm] mx-auto">
-        <!-- 初始提示 -->
         <div class="no-print text-center text-gray-500 py-20 bg-white rounded-xl shadow-md">
-            請設定參數後點擊「預覽題目」
+            請點擊「預覽題目」開始生成
         </div>
     </div>
 
@@ -148,8 +148,14 @@
 
             for (let p = 0; p < pageCount; p++) {
                 const pageDiv = document.createElement('div');
-                pageDiv.className = 'print-page bg-white shadow-xl mb-8';
+                pageDiv.className = 'print-page bg-white shadow-xl mb-8 p-10';
                 
+                // 列印時右上角的 Logo
+                const printLogo = document.createElement('img');
+                printLogo.src = "https://media.ct.org.tw/upload/news_article/2019/03/21231941_1601717976537976_3045329721267241044_n.jpg?wm=LB";
+                printLogo.className = "logo-top-right";
+                pageDiv.appendChild(printLogo);
+
                 // 標題
                 const title = document.createElement('h2');
                 title.className = 'text-3xl font-bold border-b-4 border-gray-800 pb-4 mb-8 text-center';
@@ -157,11 +163,10 @@
                 pageDiv.appendChild(title);
 
                 const grid = document.createElement('div');
-                grid.className = 'grid grid-cols-1 gap-y-12 mt-12';
+                grid.className = 'grid grid-cols-1 gap-y-10 mt-10';
                 
                 let pageAnswers = [];
 
-                // 每頁產生 10 題
                 for (let i = 1; i <= 10; i++) {
                     let num1, num2, operator, answer;
                     
@@ -169,14 +174,14 @@
                         num1 = getRandomInt(1, 9);
                         num2 = getRandomInt(1, 9);
                     } else if (difficulty === 'medium') {
-                        num1 = getRandomInt(10, 50);
-                        num2 = getRandomInt(1, 9); 
+                        num1 = getRandomInt(10, 80);
+                        num2 = getRandomInt(1, 15); 
                     } else if (difficulty === 'hard') {
                         num1 = getRandomInt(20, 99);
                         num2 = getRandomInt(10, 99);
                     } else {
-                        num1 = getRandomInt(100, 500);
-                        num2 = getRandomInt(50, 400);
+                        num1 = getRandomInt(100, 999);
+                        num2 = getRandomInt(100, 999);
                     }
 
                     let ops = [];
@@ -192,11 +197,11 @@
                     pageAnswers.push({ id: i, ans: answer });
 
                     const probRow = document.createElement('div');
-                    probRow.className = 'flex items-center justify-between border-b border-gray-100 pb-4 px-4';
+                    probRow.className = 'flex items-center justify-between border-b border-gray-100 pb-2 px-4';
                     probRow.innerHTML = `
-                        <div class="text-2xl text-gray-400 font-mono">${i}.</div>
-                        <div class="math-problem font-bold">${num1} ${operator === '+' ? '+' : '−'} ${num2} =</div>
-                        <div class="w-48 h-16 border-2 border-dashed border-gray-400 rounded-lg"></div>
+                        <div class="text-xl text-gray-400 font-mono">${i}.</div>
+                        <div class="math-problem font-bold text-gray-800">${num1} ${operator === '+' ? '+' : '−'} ${num2} =</div>
+                        <div class="w-40 h-16 border-2 border-gray-300 rounded-md bg-gray-50"></div>
                     `;
                     grid.appendChild(probRow);
                 }
@@ -204,8 +209,8 @@
                 pageDiv.appendChild(grid);
                 
                 const footer = document.createElement('div');
-                footer.className = 'mt-16 text-center text-gray-500 italic text-xl';
-                footer.innerText = "多動腦，身體好！加油！";
+                footer.className = 'mt-12 text-center text-gray-400 italic text-lg';
+                footer.innerText = "多運動、多動腦，開心每一天！";
                 pageDiv.appendChild(footer);
 
                 container.appendChild(pageDiv);
@@ -214,7 +219,7 @@
 
             if (showAnswers) {
                 const ansPage = document.createElement('div');
-                ansPage.className = 'print-page bg-white shadow-xl mb-8';
+                ansPage.className = 'print-page bg-white shadow-xl mb-8 p-10';
                 ansPage.innerHTML = `<h2 class="text-3xl font-bold border-b-4 border-green-600 pb-4 mb-8 text-center text-green-700">答案參考頁</h2>`;
                 
                 const ansGrid = document.createElement('div');
@@ -222,7 +227,7 @@
 
                 allAnswers.forEach(pageAns => {
                     const box = document.createElement('div');
-                    box.className = 'border p-4 rounded-lg bg-gray-50';
+                    box.className = 'border-2 border-green-100 p-4 rounded-lg bg-green-50';
                     box.innerHTML = `<h3 class="font-bold text-xl mb-2 text-blue-600">第 ${pageAns.page} 回</h3>`;
                     let list = document.createElement('div');
                     list.className = 'grid grid-cols-2 gap-2 text-lg';
